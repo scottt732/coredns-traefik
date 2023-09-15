@@ -1,4 +1,4 @@
-# coredns traefic plugin
+# coredns traefik plugin
 
 ## Name
 
