@@ -8,6 +8,22 @@
 
 Extracts FQDN's from the `Host()` and `HostSNI()` values in traefik's http router rules (Traefik's `/api/http/routers` endpoint). Returns a CNAME result with the traefik instance's domain.
 
+### Why?
+
+Homelab + free time. Prior to using traefik, I had a few nginx containers running in different vlans in my homelab. 
+I would create config files by hand, setup static DNS entries, generate certs, and reverse proxy to docker 
+containers by hand. 
+
+Traefik took care of a lot of that for me, but I still needed to setup the static DNS entries. Basically I would 
+have a single IP for traefik and a bunch of CNAMEs to it for the various containerized services. Rather than go 
+into pfSense to do this every time, I figured I'd find something more automatic. So I spun up CoreDNS and threw 
+this plugin together to poll the Traefik API periodically and figure out what host names I have http routers 
+referring to. For each of those, I can respond with a CNAME to the Traefik server on-the-fly. 
+
+When you pair this with Traefik's ability to configure routes and services via Docker labels, this completely 
+automates the DNS, TLS, and reverse proxy pain when spinning up new containers. It's a nice stopgap until I get 
+around to making the switch to kubernetes & should play nicely during the transition period.
+
 ## Compilation
 
 This package will always be compiled as part of CoreDNS and not in a standalone way. It will require you to use `go get` or as a dependency on [plugin.cfg](https://github.com/coredns/coredns/blob/master/plugin.cfg).
@@ -40,6 +56,7 @@ make
 ~~~ txt
 traefik https://your-traefik.server.com/api {
   cname your-traefik.server.com
+  refreshInterval 
   ttl 5
 }
 ~~~
