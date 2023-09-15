@@ -54,45 +54,89 @@ make
 ## Syntax
 
 ~~~ txt
-traefik https://your-traefik.server.com/api {
-  cname your-traefik.server.com
-  refreshInterval 
-  ttl 5
+traefik https://your-traefik.homelab.net/api {
+  cname your-traefik.homelab.net
+  refreshInterval 30
+  ttl 30
 }
 ~~~
+
+- `https://your-traefik.homelab.net/api` refers to the base [Traefik API endpoint](https://doc.traefik.io/traefik/operations/api/) (without trailing slash). Given the base URL, this will hit `https://your-traefik.homelab.net/api/http/routers` endpoint.
+- `cname` is the fully qualified domain name (with or without trailing `.`) that matching requests will have returned. Usually this will be the host name of the API endpoint above.
+- `refreshInterval` specifies how frequently that `api/http/routers` endpoint is polled for changes (in seconds)
+- `ttl` determines that time-to-live for successful responses (in seconds).
+
+### Example
+
+Imagine you have services in your homelab which you'd like to expose internally/externally as `homelab.net` subdomains.
+
+- Traefik is listening on 80/443 on a host whose IP is `10.10.10.2`
+- The primary gateway/DNS is on `10.10.10.1`
+- You want `traefik.homelab.net` to route to Traefik's dashboard/API.
+- You want a container named `gitea` to be resolvable as `mytestservice.homelab.net` with Traefik taking care of TLS/acme and reverse proxying.
+
+Given this CoreDNS corefile fragment:
+
+```
+homelab.net:53 {
+    hosts {
+        10.10.10.2 traefik.homelab.net
+        fallthrough
+    }
+    traefik https://traefik.homelab.net/api {
+        cname traefik.homelab.net
+        refreshInterval 30
+        ttl 5
+    }
+    forward . dns://10.10.10.1
+}
+```
+
+This will cause requests for `traefik.homelab.net` to return the A record 10.10.0.2.
+
+Then we can use a compose.yml like this.
+
+```
+...
+services:
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitea-web.rule=Host(`gitea.homelab.net`)"
+      - "traefik.http.routers.gitea-web.service=gitea-web-svc"
+      - "traefik.http.routers.gitea-web.entrypoints=websecure"
+      - "traefik.http.routers.gitea-web.tls=true"
+      - "traefik.http.routers.gitea-web.tls.domains[0].main=homelab.net"
+      - "traefik.http.routers.gitea-web.tls.domains[0].sans=*.homelab.net"
+      - "traefik.http.services.gitea-web-svc.loadbalancer.server.scheme=http"
+      - "traefik.http.services.gitea-web-svc.loadbalancer.server.port=3000"
+    ...
+```
+
+The container labels cause Traefik's routers & services to get wired together, waiting for a match 
+on `gitea.homelab.net`. 
+
+This plugin polls the Traefik API and discovers `gitea.homelab.net`. It dynamically returns a CNAME 
+to `traefik.homelab.net`, which gets resolved via the A record to `10.10.10.2`. Traefik receives the
+request and sees the host name matches its rule.
+
+In my case, pfSense's DNS Resolver handles DNS for my network and I setup a conditional forwarder for 
+the zone `homelab.net` to point just those requests to the CoreDNS instance. Alternatively, you can 
+send all of your DNS requests through CoreDNS.
 
 ## Metrics
 
 If monitoring is enabled (via the *prometheus* directive) the following metric is exported:
 
-* `coredns_example_request_count_total{server}` - query count to the *example* plugin.
+* `coredns_traefik_request_count_total{server}` - query count to the *traefik* plugin.
 
 The `server` label indicated which server handled the request, see the *metrics* plugin for details.
 
 ## Ready
 
 This plugin reports readiness to the ready plugin. It will be ready after the first refresh of data
-
-## Examples
-
-In this configuration, we forward all queries to 9.9.9.9 and print "example" whenever we receive
-a query.
-
-~~~ corefile
-. {
-  forward . 9.9.9.9
-  example
-}
-~~~
-
-Or without any external connectivity:
-
-~~~ corefile
-. {
-  whoami
-  example
-}
-~~~
 
 ## Also See
 

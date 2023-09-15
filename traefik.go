@@ -26,10 +26,11 @@ type TraefikConfigEntry struct {
 type TraefikConfigEntryMap map[string]*TraefikConfigEntry
 
 type TraefikConfig struct {
-	baseUrl     *url.URL
-	cname       string
-	ttl         uint32
-	hostMatcher *regexp.Regexp
+	baseUrl         *url.URL
+	cname           string
+	ttl             uint32
+	refreshInterval uint32
+	hostMatcher     *regexp.Regexp
 }
 
 type Traefik struct {
@@ -77,7 +78,7 @@ func (t *Traefik) start() error {
 	log.Info("Starting!")
 	t.refresh()
 
-	uptimeTicker := time.NewTicker(30 * time.Second) // TODO: Configurable
+	uptimeTicker := time.NewTicker(time.Duration(t.Config.refreshInterval) * time.Second)
 
 	for {
 		select {

@@ -14,6 +14,8 @@ import (
 
 const defaultTraefikApiEndpoint = "https://traefik.example.com/api"
 const defaultTraefikCname = "traefik.example.com"
+const defaultTtl uint32 = 30
+const defaultRefreshInterval uint32 = 30
 
 func init() {
 	caddy.RegisterPlugin("traefik", caddy.Plugin{
@@ -26,8 +28,10 @@ func createPlugin(c *caddy.Controller) (*Traefik, error) {
 	hostMatcher := regexp.MustCompile(`Host(SNI)?\(` + "`" + `(.+)` + "`" + `\)`)
 
 	cfg := &TraefikConfig{
-		cname:       defaultTraefikCname,
-		hostMatcher: hostMatcher,
+		cname:           defaultTraefikCname,
+		hostMatcher:     hostMatcher,
+		ttl:             defaultTtl,
+		refreshInterval: defaultRefreshInterval,
 	}
 
 	traefik := &Traefik{
@@ -64,6 +68,17 @@ func createPlugin(c *caddy.Controller) (*Traefik, error) {
 					return traefik, c.ArgErr()
 				}
 				cfg.cname, _ = strings.CutSuffix(c.Val(), ".")
+			case "refreshInterval":
+				if !c.NextArg() {
+					return traefik, c.ArgErr()
+				}
+				refreshInterval, err := strconv.ParseUint(c.Val(), 10, 32)
+				if err != nil {
+					return traefik, err
+				}
+				if refreshInterval > 0 {
+					cfg.refreshInterval = uint32(refreshInterval)
+				}
 			case "ttl":
 				if !c.NextArg() {
 					return traefik, c.ArgErr()

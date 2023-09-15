@@ -18,14 +18,8 @@ type TraefikClient struct {
 	client         *http.Client
 }
 
-func NewTraefikClient(cfg *TraefikConfig, options ...func(*http.Client) error) (*TraefikClient, error) {
+func NewTraefikClient(cfg *TraefikConfig) (*TraefikClient, error) {
 	httpClient := &http.Client{}
-	for _, op := range options {
-		err := op(httpClient)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	httpRoutersUrl, err := url.JoinPath(cfg.baseUrl.String(), "/http/routers")
 	if err != nil {
