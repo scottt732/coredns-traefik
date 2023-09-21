@@ -25,7 +25,7 @@ func init() {
 }
 
 func createPlugin(c *caddy.Controller) (*Traefik, error) {
-	hostMatcher := regexp.MustCompile(`Host(SNI)?\(` + "`" + `(.+)` + "`" + `\)`)
+	hostMatcher := regexp.MustCompile(`Host(SNI)?\(` + "`([^`]+)`" + `\)`)
 
 	cfg := &TraefikConfig{
 		cname:           defaultTraefikCname,
