@@ -2,6 +2,7 @@ package traefik
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -44,30 +45,34 @@ func (c *TraefikClient) GetHttpRouters() (*[]HttpRouter, error) {
 		return nil, err
 	}
 
-	if response.StatusCode != 200 {
-		log.Errorf("Received invalid response from API: %d", response.StatusCode)
-		return nil, err
-	}
-
+	var body []byte
+	var readErr error
 	if response.Body != nil {
 		defer response.Body.Close()
+		body, readErr = io.ReadAll(response.Body)
 	}
 
-	body, err := io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Errorf("Failed to read response body: %q", readErr)
+		return nil, readErr
+	}
 
-	str := string(body[:])
-	log.Debug(str)
-
-	if err != nil {
-		log.Errorf("Failed to read http routers response: %q", err)
-		return nil, err
+	if response.StatusCode != 200 {
+		if body != nil {
+			bodyStr := string(body[:])
+			return nil, fmt.Errorf("Received %d response from API: %s", response.StatusCode, bodyStr)
+		} else {
+			return nil, fmt.Errorf("Received %d response from API", response.StatusCode)
+		}
 	}
 
 	result := []HttpRouter{}
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		log.Errorf("Failed to parse json body: %q", err)
-		return nil, err
+
+	if body != nil {
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to parse json body: %q", err)
+		}
 	}
 
 	return &result, nil

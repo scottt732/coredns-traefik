@@ -86,7 +86,7 @@ func (t *Traefik) start() error {
 			log.Debug("Refreshing sites")
 			err := t.refresh()
 			if err != nil {
-				log.Errorf("Error updating sites: %v", err)
+				log.Warningf("Error updating sites: %v", err)
 			}
 		}
 	}

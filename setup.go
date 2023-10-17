@@ -8,6 +8,7 @@ import (
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/coredns/caddy"
 )
@@ -103,21 +104,24 @@ func createPlugin(c *caddy.Controller) (*Traefik, error) {
 
 	traefik.TraefikClient = traefikClient
 	traefik.mappings = make(TraefikConfigEntryMap)
-	go traefik.start()
 
 	return traefik, nil
 }
 
 func setup(c *caddy.Controller) error {
-	dd, err := createPlugin(c)
+	traefik, err := createPlugin(c)
 	if err != nil {
 		return err
 	}
 
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
-		dd.Next = next
-		return dd
+		traefik.Next = next
+		return traefik
 	})
 
-	return nil
+	errs := errgroup.Go(func() error {
+		return traefik.start()
+	})
+
+	return errs.Wait()
 }
