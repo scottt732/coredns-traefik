@@ -6,7 +6,7 @@
 
 ## Description
 
-Extracts FQDN's from the `Host()` and `HostSNI()` values in traefik's http router rules (Traefik's `/api/http/routers` endpoint). Returns a CNAME result with the traefik instance's domain.
+Extracts FQDN's from the `Host()` and `HostSNI()` values in traefik's http router rules (Traefik's `/api/http/routers` endpoint). Returns a `CNAME` result with the traefik instance's domain.
 
 ### Why?
 
