@@ -8,7 +8,6 @@ import (
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/coredns/caddy"
 )
@@ -119,9 +118,7 @@ func setup(c *caddy.Controller) error {
 		return traefik
 	})
 
-	errs := errgroup.Go(func() error {
-		return traefik.start()
-	})
+	go traefik.start()
 
-	return errs.Wait()
+	return nil
 }
