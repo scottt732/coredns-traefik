@@ -113,12 +113,12 @@ func setup(c *caddy.Controller) error {
 		return err
 	}
 
+	go traefik.start()
+
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
 		traefik.Next = next
 		return traefik
 	})
-
-	go traefik.start()
 
 	return nil
 }

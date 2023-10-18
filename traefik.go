@@ -158,7 +158,7 @@ func (t *Traefik) refresh() error {
 	} else if deletes > 0 {
 		log.Infof("Deleted %d entries", deletes)
 	} else {
-		log.Debug("No changes detected")
+		log.Infof("No changes detected")
 	}
 
 	t.ready = true
