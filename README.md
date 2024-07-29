@@ -51,20 +51,58 @@ Or you can instead use make:
 make
 ```
 
-## Syntax
+## Settings
 
 ~~~ txt
 traefik https://your-traefik.homelab.net/api {
   cname your-traefik.homelab.net
-  refreshInterval 30
+  a 10.0.0.2
+  refreshinterval 30
+  ttl 30
+  insecureskipverify [true|false*]
+  resolveapihost [true|false*]
+}
+~~~
+
+- `https://your-traefik.homelab.net/api` - This is the endpoint that your Traefik API is listening on. You may need to configure Traefik to expose this.
+- Either (but not both):
+  - `cname` - The host name to return for HTTP routes defined in Traefik. Typically, this is the same host name as in the API URI above.
+  - `a` - The IP address to return for HTTP routes defined in Traefik. Typically, this is the IP address of the Traefik server.
+- `refreshinterval` - How frequently to poll for changes in Traefik
+- `ttl` - How long should the results be persisted in downstream DNS caches
+- `insecureskipverify` - Optional. if your Traefik API endpoint requires HTTPS but you don't have a valid/trusted certificate
+- `resolveapihost` - Optional. When true and you've chosen `a` above, this will cause the plugin to resolve `your-traefik.homelab.net` itself to the IP address specified in the `a` block  
+- `fallthrough` - Optional 
+
+## Syntax
+
+### Option 1: Returning CNAMEs
+
+~~~ txt
+traefik https://your-traefik.homelab.net/api {
+  cname your-traefik.homelab.net
+  refreshinterval 30
   ttl 30
 }
 ~~~
 
 - `https://your-traefik.homelab.net/api` refers to the base [Traefik API endpoint](https://doc.traefik.io/traefik/operations/api/) (without trailing slash). Given the base URL, this will hit `https://your-traefik.homelab.net/api/http/routers` endpoint.
 - `cname` is the fully qualified domain name (with or without trailing `.`) that matching requests will have returned. Usually this will be the host name of the API endpoint above.
-- `refreshInterval` specifies how frequently that `api/http/routers` endpoint is polled for changes (in seconds)
+- `refreshinterval` specifies how frequently that `api/http/routers` endpoint is polled for changes (in seconds)
 - `ttl` determines that time-to-live for successful responses (in seconds).
+
+### Option 2: Returning A records 
+
+~~~ txt
+traefik https://your-traefik.homelab.net/api {
+  a 10.0.0.2
+  refreshinterval 30
+  ttl 30
+}
+~~~
+
+- `a` indicates the IP address(es) of `your-traefik.homelab.net`. This IP address will be returned as `A` records for all HTTP Routers discovered in Traefik.
+- You can optionally specify a `resolveapihost [true|false] (optional, default=false)` to have this plugin return `A 10.0.0.2` for `your-traefik.homelab.net` lookups
 
 ### Example
 
@@ -85,7 +123,7 @@ homelab.net:53 {
     }
     traefik https://traefik.homelab.net/api {
         cname traefik.homelab.net
-        refreshInterval 30
+        refreshinterval 30
         ttl 5
     }
     forward . dns://10.10.10.1

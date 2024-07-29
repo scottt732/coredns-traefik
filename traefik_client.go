@@ -1,6 +1,7 @@
 package traefik
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,8 +21,6 @@ type TraefikClient struct {
 }
 
 func NewTraefikClient(cfg *TraefikConfig) (*TraefikClient, error) {
-	httpClient := &http.Client{}
-
 	httpRoutersUrl, err := url.JoinPath(cfg.baseUrl.String(), "/http/routers")
 	if err != nil {
 		return nil, err
@@ -29,8 +28,16 @@ func NewTraefikClient(cfg *TraefikConfig) (*TraefikClient, error) {
 
 	client := &TraefikClient{
 		httpRoutersUrl: httpRoutersUrl,
-		client:         httpClient,
 		config:         cfg,
+	}
+
+	if cfg.insecureSkipVerify {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client.client = &http.Client{Transport: tr}
+	} else {
+		client.client = &http.Client{}
 	}
 
 	return client, nil
