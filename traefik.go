@@ -62,7 +62,6 @@ func (t *Traefik) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg
 	state := request.Request{W: w, Req: r}
 
 	if state.QClass() != dns.ClassINET || state.QType() != dns.TypeA {
-		log.Infof("Ignoring class %q, type %q", state.QClass(), state.QType())
 		return plugin.NextOrFailure(t.Name(), t.Next, ctx, w, r)
 	}
 
