@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
@@ -82,7 +81,7 @@ func createPlugin(c *caddy.Controller) (*Traefik, error) {
 				if !c.NextArg() {
 					return traefik, c.ArgErr()
 				}
-				val, _ := strings.CutSuffix(c.Val(), ".")
+				val := c.Val()
 				cfg.cname = &val
 				if mode == 1 {
 					return traefik, c.Err("traefik cname and a are mutually exclusive")
