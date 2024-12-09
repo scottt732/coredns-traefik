@@ -242,7 +242,7 @@ func a(zone string, ttl uint32, ips []net.IP) []dns.RR {
 func cname(zone string, ttl uint32, target *string) []dns.RR {
 	answers := make([]dns.RR, 1)
 	r := new(dns.CNAME)
-	r.Hdr = dns.RR_Header{Name: zone, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl}
+	r.Hdr = dns.RR_Header{Name: zone, Rrtype: dns.TypeCNAME, Class: dns.ClassINET, Ttl: ttl}
 	r.Target = *target
 	answers[0] = r
 	return answers
